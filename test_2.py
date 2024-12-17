@@ -59,6 +59,7 @@ class Bird(pg.sprite.Sprite):
         img = pg.transform.flip(img0, True, False)  # 横以外の向きこうかとん
         img_2 = pg.transform.rotozoom(pg.image.load(f"fig/2.png"), 0, 0.8)
         img0_2 = pg.transform.flip(img_2, True, False)  # 横向きのこうかとん
+        img_3 = pg.transform.rotozoom(pg.image.load(f"fig/1.png"), 0, 0.9)
         self.imgs = {
             (+1, 0): img_2,  # 右
             (+1, -1): pg.transform.rotozoom(img, 45, 0.9),  # 右上
@@ -66,7 +67,7 @@ class Bird(pg.sprite.Sprite):
             (-1, -1): pg.transform.rotozoom(img0, -45, 0.9),  # 左上
             (-1, 0): img0_2,  # 左
             (-1, +1): img0,  # 左下
-            (0, +1): pg.transform.rotozoom(img, -90, 0.9),  # 下
+            (0, +1): img_3,  # 下
             (+1, +1): img,  # 右下
         }
         self.dire = (+1, 0)
@@ -74,6 +75,12 @@ class Bird(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 10
+        self.life = 3  # ライフを設定
+        self.jump_power = -30  # ジャンプの初速度
+        self.gravity = 1.0  # 重力加速度
+        self.velocity_y = 0  # 縦方向の速度
+        self.state = "normal"  # 通常状態: "normal", 被弾状態: "hyper"
+        self.hyper_life = 0  # 無敵状態の残りフレーム数
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -95,14 +102,36 @@ class Bird(pg.sprite.Sprite):
             if key_lst[k]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
-        self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
+        # 水平移動
+        self.rect.move_ip(self.speed * sum_mv[0], 0)
         if check_bound(self.rect) != (True, True):
-            self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
+            self.rect.move_ip(-self.speed * sum_mv[0], 0)
+
+        # ジャンプ処理
+        if key_lst[pg.K_SPACE] and self.rect.bottom >= HEIGHT:
+            self.velocity_y = self.jump_power
+
+        # 重力処理
+        self.velocity_y += self.gravity
+        self.rect.move_ip(0, self.velocity_y)
+
+        # 地面で停止
+        if self.rect.bottom > HEIGHT:
+            self.rect.bottom = HEIGHT
+            self.velocity_y = 0
+
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
         screen.blit(self.image, self.rect)
 
+        # 被弾状態処理
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image)  # 画像を変換
+            self.hyper_life -= 1
+            if self.hyper_life < 0:
+                self.state = "normal"
+        screen.blit(self.image, self.rect)
 
 
 class Beam(pg.sprite.Sprite):
@@ -162,17 +191,31 @@ class Explosion(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+class Life:
+    """
+    ライフ画面の表示
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.value = 3
+        self.image = self.font.render(f"Life: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 60, 20
 
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Life: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 def main():
     pg.display.set_caption("こうかとんの村")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
 
-    bird = Bird(3, (900, 400))
+    bird = Bird(3, (550, 400))
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
-
+    life = Life()
     tmr = 0
     clock = pg.time.Clock()
     while True:
@@ -186,6 +229,7 @@ def main():
 
 
         bird.update(key_lst, screen)
+        life.update(screen)
         beams.update()
         beams.draw(screen)
         exps.update()
