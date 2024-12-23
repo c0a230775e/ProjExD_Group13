@@ -1,3 +1,4 @@
+from pygame.locals import *
 import math
 import os
 import random
@@ -9,6 +10,8 @@ import pygame as pg
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
+SCREEN_FLAG = False
+
 
 
 def check_bound(obj_rct: pg.Rect) -> tuple[bool, bool]:
@@ -161,36 +164,145 @@ class Explosion(pg.sprite.Sprite):
             self.kill()
 
 
+class Life:
+    """
+    残りライフに関するクラス
+    """
+    def __init__(self, color: tuple[int, int, int]):
+        self.valu = 10
+        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        self.img = self.fonto.render(f"ライフ {self.valu}", 0, (0, 255, 100))
+        self.rct = self.img.get_rect()
+        self.rct.center = [100, HEIGHT-50]
+
+
+    def update(self, screen:pg.Surface):
+       self.img = self.fonto.render(f"ライフ {self.valu}", 0, (100, 255, 255))
+       screen.blit(self.img, self.rct)
+
+
+def game_start(screen: pg.Surface):
+    """
+    ゲームスタート時に、操作方法表示、ゲーム開始操作設定
+    """
+    
+    fonto = pg.font.SysFont("hg正楷書体pro", 50)
+    txt1 = fonto.render("Game Start : escキー", True, (255, 255, 255))
+    txt2 = fonto.render("操作方法1：WASDで操作", True, (255, 255, 255))
+    txt3 = fonto.render("操作方法2：スペースでジャンプ", True, (255, 255, 255))
+    txt4 = fonto.render("操作方法3：エンターと左クリックで攻撃", True, (255, 255, 255))
+    game_start = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_start, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_start.set_alpha(128)
+    screen.blit(game_start, (0, 0))  # 半透明画面描画
+    screen.blit(txt1, [WIDTH/2-450, HEIGHT/2-100])  # Game Start描画
+    screen.blit(txt2, [WIDTH/2-450, HEIGHT/2-50])
+    screen.blit(txt3, [WIDTH/2-450, HEIGHT/2])
+    screen.blit(txt4, [WIDTH/2-450, HEIGHT/2+50])
+    pg.display.update()
+
+def game_clear(screen: pg.Surface):
+    """
+    ゲームクリア時に、「Game Clear」と表示
+    """
+    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
+    fonto = pg.font.Font(None, 100)
+    txt = fonto.render("Game Clear", True, (255, 255, 255))
+    game_clear = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_clear, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_clear.set_alpha(128)
+    screen.blit(game_clear, (0, 0))  # 半透明画面描画
+    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
+    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
+    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
+    print("kansujikkou")
+    pg.display.update()
+    time.sleep(5)
+
+def game_over(screen: pg.Surface) -> None:
+    """
+    ゲームオーバー時に、半透明の黒い画面上で「Game Over」と表示し、
+    泣いているこうかとん画像を張り付ける
+    """
+    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
+    fonto = pg.font.Font(None, 100)
+    txt = fonto.render("Game Over", True, (255, 255, 255))
+    game_over = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_over, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_over.set_alpha(128)
+    screen.blit(game_over, (0, 0))  # 半透明画面描画
+    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
+    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
+    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
+    print("kansujikkou")
+    pg.display.update()
+    time.sleep(5)
+
 
 def main():
-    pg.display.set_caption("真！こうかとん無双")
+    SCREEN_FLAG = False
+    pg.display.set_caption("title")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
-
-    bird = Bird(3, (900, 400))
-    beams = pg.sprite.Group()
-    exps = pg.sprite.Group()
-
-    tmr = 0
-    clock = pg.time.Clock()
-    while True:
-        key_lst = pg.key.get_pressed()
+    screen.blit(bg_img, [0, 0])
+    game_start(screen)  # タイトル画面の関数を呼び出し
+    pg.display.update()
+        
+    while SCREEN_FLAG == False:  # Falseのときタイトル画面
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
-                beams.add(Beam(bird))
-        screen.blit(bg_img, [0, 0])
+            if event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE:  # エスケープキーが押されたら
+                SCREEN_FLAG = True  # 画面状態をTrueにする
+                pg.quit
+
+    if SCREEN_FLAG == True:  # 画面状態がTrueならゲーム画面を表示
+        pg.display.set_caption("真！こうかとん無双")
+        screen = pg.display.set_mode((WIDTH, HEIGHT))
+        bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
+
+        bird = Bird(3, (900, 400))
+        beams = pg.sprite.Group()
+        exps = pg.sprite.Group()
+
+        l_scr = Life((0, 255, 255))  # 残りライフ
+
+        tmr = 0
+        clock = pg.time.Clock()
+        while True:
+            key_lst = pg.key.get_pressed()
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    return 0
+                if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                    beams.add(Beam(bird))
+                if event.type == pg.KEYDOWN and event.key == pg.K_1:  # 1が押されたらライフを減らす
+                    l_scr.valu-=1
+                    if l_scr.valu == 0:  # ライフが0なら
+                        game_over(screen)  # ゲームオーバー
+                        return
+                if event.type == pg.KEYDOWN and event.key == pg.K_2:  # 2が押されたらゲームクリア
+                    game_clear(screen)
+                    return
+                if event.type == pg.KEYDOWN and event.key == pg.K_3:  # 3が押されたらゲームオーバー
+                    game_over(screen)
+                    return
+            screen.blit(bg_img, [0, 0])
+
+            #if 敵に当たる、攻撃が当たったら:
+            #l_scr.valu-=1  残りライフを1減らす
+            
 
 
-        bird.update(key_lst, screen)
-        beams.update()
-        beams.draw(screen)
-        exps.update()
-        exps.draw(screen)
-        pg.display.update()
-        tmr += 1
-        clock.tick(50)
+            bird.update(key_lst, screen)
+            l_scr.update(screen)  # 残りライフ
+            beams.update()
+            beams.draw(screen)
+            exps.update()
+            exps.draw(screen)
+            pg.display.update()
+            tmr += 1
+            clock.tick(50)
 
 
 if __name__ == "__main__":
