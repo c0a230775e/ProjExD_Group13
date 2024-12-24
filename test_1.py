@@ -316,8 +316,8 @@ def main():
                 return
         
         
-        bombs.update()
-        bombs.draw(screen)
+        bossbombs.update()
+        bossbombs.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
