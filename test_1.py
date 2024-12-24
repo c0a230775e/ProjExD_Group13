@@ -79,7 +79,7 @@ class Bird(pg.sprite.Sprite):
         self.rect.center = xy
         self.speed = 5
         self.life = 3  # ライフを設定
-        self.jump_power = -22  # ジャンプの初速度
+        self.jump_power = -19  # ジャンプの初速度
         self.gravity = 1.0  # 重力加速度
         self.velocity_y = 0  # 縦方向の速度
         self.state = "normal"  # 通常状態: "normal", 被弾状態: "hyper"
@@ -559,7 +559,7 @@ def main():
         pg.display.set_caption("こうかとんの村")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
-
+ 
         bird = Bird(3, (550, 300))
         beams = pg.sprite.Group()
         bombs = pg.sprite.Group()
@@ -631,33 +631,38 @@ def main():
             
 
             bird.update(key_lst, screen)
-            #if bird.velocity_y >= -0.5:
-            if floor.check_collision(bird.rect):
-                bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step1.check_collision(bird.rect):
-                bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step2.check_collision(bird.rect):
-                bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
-                bird.flooting = True
-            elif step3.check_collision(bird.rect):
-                bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step4.check_collision(bird.rect):
-                bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step5.check_collision(bird.rect):
-                bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            else:
-                bird.flooting = False
+            if bird.velocity_y >= 0:
+                if floor.check_collision(bird.rect):
+                    bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step1.check_collision(bird.rect):
+                    bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step2.check_collision(bird.rect):
+                    bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
+                    bird.flooting = True
+                elif step3.check_collision(bird.rect):
+                    bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step4.check_collision(bird.rect):
+                    bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step5.check_collision(bird.rect):
+                    bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                else:
+                    bird.flooting = False
             # else:
             #     bird.flooting = False
 
             if pg.sprite.spritecollideany(bird, deathks):
                 return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
             
+            collisions = pg.sprite.groupcollide( beams,deathks, True, True)  # 敵機とビームの衝突リスト
+            if collisions:
+                for deathk in collisions.values():
+                    for d in deathk:
+                        d.kill()
             # ボスの生成
         
             boss.update(tmr)
@@ -680,7 +685,7 @@ def main():
     
             bossbombs.update()
             bossbombs.draw(screen)
-            
+            l_scr.update(screen)  # 残りライフ
             beams.update()
             beams.draw(screen)
             exps.update()
@@ -701,7 +706,6 @@ def main():
             bombs.draw(screen)
             flying_enemy.update()
             flying_enemy.draw(screen)
-            l_scr.update(screen)  # 残りライフ
             pg.display.update()
             tmr += 1
             clock.tick(50)
