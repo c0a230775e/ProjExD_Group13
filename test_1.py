@@ -165,6 +165,175 @@ class Explosion(pg.sprite.Sprite):
         if self.life < 0:
             self.kill()
 
+class Floor:
+    """
+    床に関するクラス
+    """
+    def __init__(self):
+        """
+        床画像Surfaceを生成する
+        """
+        super().__init__()
+        self.image = pg.image.load(f"fig/black01.png")
+        self.tile_size = self.image.get_size()
+        self.width = WIDTH
+        self.height = 80
+        self.surface = pg.Surface((self.width, self.height))
+        self.rect = self.surface.get_rect()
+        self.rect.topleft = (0, HEIGHT - self.height)
+
+        # タイル画像を繰り返し描画
+        for x in range(0, self.width, self.tile_size[0]):
+            for y in range(0, self.height, self.tile_size[1]):
+                self.surface.blit(self.image, (x, y))
+
+    def update(self, screen: pg.Surface):
+        """
+        床を画面に描画する
+        引数 screen：画面Surface
+        """
+        screen.blit(self.surface, self.rect)
+
+    def check_collision(self, bird_rect):
+        """
+        こうかとんと床の衝突をチェックする
+        引数 bird_rect：こうかとんの矩形
+        戻り値：衝突しているかどうかの真偽値
+        """
+        return self.rect.colliderect(bird_rect)
+        
+class Step():
+    """
+    階層に関するクラス
+    """
+    def __init__(self, x, y, width, height):
+        """
+        階層画像Surfaceを生成する
+        引数 x, y：階層の左上の座標
+        引数 width, height：階層の幅と高さ
+        """
+        super().__init__()
+        self.image = pg.image.load(f"fig/brown01.png")
+        self.tile_size = self.image.get_size()
+        self.width = width
+        self.height = height
+        self.surface = pg.Surface((self.width, self.height))
+        self.rect = self.surface.get_rect()
+        self.rect.topleft = (x, y)
+
+        # タイル画像を繰り返し描画
+        for x in range(0, self.width, self.tile_size[0]):
+            for y in range(0, self.height, self.tile_size[1]):
+                self.surface.blit(self.image, (x, y))
+
+    def update(self, screen: pg.Surface):
+        """
+        階層を画面に描画する
+        引数 screen：画面Surface
+        """
+        screen.blit(self.surface, self.rect)
+    
+    def check_collision(self, bird_rect):
+        """
+        こうかとんと床の衝突をチェックする
+        引数 bird_rect：こうかとんの矩形
+        戻り値：衝突しているかどうかの真偽値
+        """
+        return self.rect.colliderect(bird_rect)
+
+class DeathK(pg.sprite.Sprite):
+    """
+    デスこうかとん（敵キャラ）に関するクラス
+    """
+    def __init__(self, x, y, step_x, step_width):
+        super().__init__()
+        self.images = [pg.image.load("fig/DeathK.png"), pg.transform.flip(pg.image.load("fig/DeathK.png"), True, False)]
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, y)
+        self.vx = 2
+        self.step_x = step_x
+        self.step_width = step_width
+
+    def update(self):
+        self.rect.x += self.vx
+        if self.rect.left <= self.step_x or self.rect.right >= self.step_x + self.step_width:
+            self.vx = -self.vx
+            self.image = pg.transform.flip(self.image, True, False)
+
+class Life:
+    """
+    残りライフに関するクラス
+    """
+    def __init__(self, color: tuple[int, int, int]):
+        self.valu = 10
+        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
+        self.img = self.fonto.render(f"ライフ {self.valu}", 0, (0, 255, 100))
+        self.rct = self.img.get_rect()
+        self.rct.center = [100, HEIGHT-50]
+
+
+    def update(self, screen:pg.Surface):
+       self.img = self.fonto.render(f"ライフ {self.valu}", 0, (100, 255, 255))
+       screen.blit(self.img, self.rct)
+
+
+def game_start(screen: pg.Surface):
+    """
+    ゲームスタート時に、操作方法表示、ゲーム開始操作設定
+    """
+    
+    fonto = pg.font.SysFont("hg正楷書体pro", 50)
+    txt1 = fonto.render("Game Start : escキー", True, (255, 255, 255))
+    txt2 = fonto.render("操作方法1：WASDで操作", True, (255, 255, 255))
+    txt3 = fonto.render("操作方法2：スペースでジャンプ", True, (255, 255, 255))
+    txt4 = fonto.render("操作方法3：エンターと左クリックで攻撃", True, (255, 255, 255))
+    game_start = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_start, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_start.set_alpha(128)
+    screen.blit(game_start, (0, 0))  # 半透明画面描画
+    screen.blit(txt1, [WIDTH/2-450, HEIGHT/2-100])  # Game Start描画
+    screen.blit(txt2, [WIDTH/2-450, HEIGHT/2-50])
+    screen.blit(txt3, [WIDTH/2-450, HEIGHT/2])
+    screen.blit(txt4, [WIDTH/2-450, HEIGHT/2+50])
+    pg.display.update()
+
+def game_clear(screen: pg.Surface):
+    """
+    ゲームクリア時に、「Game Clear」と表示
+    """
+    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
+    fonto = pg.font.Font(None, 100)
+    txt = fonto.render("Game Clear", True, (255, 255, 255))
+    game_clear = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_clear, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_clear.set_alpha(128)
+    screen.blit(game_clear, (0, 0))  # 半透明画面描画
+    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
+    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
+    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
+    print("kansujikkou")
+    pg.display.update()
+    time.sleep(5)
+
+def game_over(screen: pg.Surface) -> None:
+    """
+    ゲームオーバー時に、半透明の黒い画面上で「Game Over」と表示し、
+    泣いているこうかとん画像を張り付ける
+    """
+    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
+    fonto = pg.font.Font(None, 100)
+    txt = fonto.render("Game Over", True, (255, 255, 255))
+    game_over = pg.Surface((WIDTH, HEIGHT))
+    pg.draw.rect(game_over, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
+    game_over.set_alpha(128)
+    screen.blit(game_over, (0, 0))  # 半透明画面描画
+    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
+    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
+    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
+    print("kansujikkou")
+    pg.display.update()
+    time.sleep(5)
 
 class Life:
     """
@@ -264,9 +433,19 @@ def main():
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
 
-        bird = Bird(3, (900, 400))
+        bird = Bird(3, (550, 300))
         beams = pg.sprite.Group()
         exps = pg.sprite.Group()
+        floor = Floor()
+        step1 = Step(00,  400, 300, 20) #床の位置を設定
+        step2 = Step(800, 400, 300, 20)
+        step3 = Step(00, 200, 300, 20)
+        step4 = Step(800, 200, 300, 20)
+        step5 = Step(450, 300, 200, 20 )
+        deathk1 = DeathK(0, 330, 0, 300)  # step1の上を徘徊するデスこうかとん
+        deathk2 = DeathK(800, 330, 800, 300)  # step2の上を徘徊するデスこうかとん
+        deathk3 = DeathK(0, 500, 0, 1100)
+        deathks = pg.sprite.Group(deathk1, deathk2,deathk3)
 
         l_scr = Life((0, 255, 255))  # 残りライフ
 
@@ -291,18 +470,44 @@ def main():
                     game_over(screen)
                     return
             screen.blit(bg_img, [0, 0])
-
             #if 敵に当たる、攻撃が当たったら:
             #l_scr.valu-=1  残りライフを1減らす
             
 
 
             bird.update(key_lst, screen)
+            if floor.check_collision(bird.rect):
+                bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
+            if step1.check_collision(bird.rect):
+                bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+            if step2.check_collision(bird.rect):
+                bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
+            if step3.check_collision(bird.rect):
+                bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+            if step4.check_collision(bird.rect):
+                bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+            if step5.check_collision(bird.rect):
+                bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+
+            if pg.sprite.spritecollideany(bird, deathks):
+                return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
+            
             l_scr.update(screen)  # 残りライフ
             beams.update()
             beams.draw(screen)
             exps.update()
             exps.draw(screen)
+            floor.update(screen)
+            step1.update(screen)
+            step2.update(screen)
+            step3.update(screen)
+            step4.update(screen)
+            step5.update(screen)
+            deathk1.update()
+            deathk2.update()
+            deathk3.update()
+            deathks.update()
+            deathks.draw(screen)
             pg.display.update()
             tmr += 1
             clock.tick(50)
