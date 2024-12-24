@@ -183,6 +183,7 @@ class Explosion(pg.sprite.Sprite):
         self.rect = self.image.get_rect(center=obj.rect.center)
         self.life = life
 
+
     def update(self):
         """
         爆発時間を1減算した爆発経過時間_lifeに応じて爆発画像を切り替えることで
