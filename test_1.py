@@ -656,7 +656,8 @@ def main():
             #     bird.flooting = False
 
             if pg.sprite.spritecollideany(bird, deathks):
-                return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
+                l_scr.valu-=1
+                  # こうかとんがデスこうかとんに触れたらゲームを終了
             
             collisions = pg.sprite.groupcollide( beams,deathks, True, True)  # 敵機とビームの衝突リスト
             if collisions:
