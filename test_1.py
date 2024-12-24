@@ -702,7 +702,6 @@ def main():
             # 消去済み   
             #bossがこうかとんと衝突したら
             #　消去済み
-            
             #bossとビームが衝突したら
             if pg.sprite.spritecollide(boss, beams, True):
                 boss.hp -= 1
