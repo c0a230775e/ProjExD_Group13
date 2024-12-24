@@ -8,6 +8,7 @@ import pygame as pg
 
 WIDTH = 1100  # ゲームウィンドウの幅
 HEIGHT = 650  # ゲームウィンドウの高さ
+
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -162,6 +163,104 @@ class Explosion(pg.sprite.Sprite):
 
 
 
+class Boss(pg.sprite.Sprite):
+    """
+    ボスに関するクラス
+    """
+    boss_img = pg.image.load("fig/boss.png")
+
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(__class__.boss_img, 0, 0.6)
+        self.rect = self.image.get_rect() # ボスのRect
+        self.rect.center = (WIDTH // 2, -100)  # 初期位置は画面上部外
+        self.vx, self.vy = 5, 5  # ボスの移動速度
+        self.state = "down"  # 初期状態
+        self.hp = 20  # ボスの体力
+        self.attack_timer = 0  # 攻撃状態用のタイマー
+
+    def update(self, tmr):
+        """
+        ボスの動きを管理するメソッド
+        """
+        if self.state == "down":
+            # ボスが画面内に入る
+            self.rect.y += self.vy
+            
+            if self.rect.top >= 0:  # 画面内に入ったら移動状態に変更
+                self.rect.x += self.vx
+                self.vy = 0
+                if self.rect.right >= (WIDTH):
+                    self.vx = 0
+                    self.state = "move"
+                    self.vx = -8
+                    self.vy = 7
+
+        elif self.state == "move":
+            # ボスが画面内を移動
+            self.rect.x += self.vx
+            self.rect.y += self.vy
+            if self.rect.right >= WIDTH:  # 横方向の反転
+                self.vx *= -1
+            elif self.rect.left <= 0:  # 横方向の反転
+                self.vx *= -1
+
+            if self.rect.bottom >= HEIGHT:  # 縦方向の反転
+                self.vy *= -1
+            elif self.rect.top <= 0: # 縦方向の反転
+                self.vy *= -1
+            
+
+
+            # 一定時間経過で攻撃状態に移行
+            self.attack_timer += 1
+            if self.attack_timer >= 100:  # 100フレーム後に攻撃
+                self.attack_timer = 0
+                self.state = "attack"
+
+        elif self.state == "attack":
+            # 攻撃状態で一定時間停止
+            self.attack_timer += 1
+            
+            if self.attack_timer >= 100:  # 100フレーム後に移動再開
+                self.attack_timer = 0
+                self.state = "move"
+
+class BossBomb(pg.sprite.Sprite):
+    """
+    爆弾に関するクラス
+    """
+    colors = [(255, 0, 0), (255, 32, 0),(255, 64, 0), (255, 96, 0), (255, 128, 0), (255, 160, 0), (255, 192, 0), (255, 224, 0), (255, 255, 0)]
+
+    def __init__(self, boss: "Boss", bird: Bird):
+        """
+        爆弾円Surfaceを生成する
+        引数1 emy：爆弾を投下する敵機
+        引数2 bird：攻撃対象のこうかとん
+        """
+        super().__init__()
+        rad = 20 # 爆弾円の半径
+        self.image = pg.Surface((2*rad, 2*rad)) # 爆弾円のSurface
+        color = random.choice(__class__.colors)  # 爆弾円の色：クラス変数からランダム選択
+        pg.draw.circle(self.image, color, (rad, rad), rad)
+        self.image.set_colorkey((0, 0, 0))
+        self.rect = self.image.get_rect()
+        # 爆弾を投下するemyから見た攻撃対象のbirdの方向を計算
+        self.vx, self.vy = calc_orientation(boss.rect, bird.rect)  # birdへの方向ベクトル
+        self.rect.centerx = boss.rect.centerx  # 爆弾の初期位置
+        self.rect.centery = boss.rect.centery # 爆弾の初期位置
+        self.speed = 8
+
+    def update(self):
+        """
+        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
+        引数 screen：画面Surface
+        """
+        self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
+        if check_bound(self.rect) != (True, True):
+            self.kill()
+
+
 def main():
     pg.display.set_caption("真！こうかとん無双")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
@@ -170,8 +269,12 @@ def main():
     bird = Bird(3, (900, 400))
     beams = pg.sprite.Group()
     exps = pg.sprite.Group()
+    bossbombs = pg.sprite.Group()
 
-    tmr = 0
+    tmr = 0  # フレーム数をカウントする変数
+
+    boss = Boss()
+
     clock = pg.time.Clock()
     while True:
         key_lst = pg.key.get_pressed()
@@ -182,15 +285,47 @@ def main():
                 beams.add(Beam(bird))
         screen.blit(bg_img, [0, 0])
 
+        # ボスの生成
+        
+        boss.update(tmr)
+        screen.blit(boss.image, boss.rect)
 
+        if boss.state == "attack" and tmr % 2 == 0:  # 攻撃状態で2フレームごとに爆弾を
+            bossbombs.add(BossBomb(boss, bird))
+        for bomb in pg.sprite.groupcollide(bossbombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
+            exps.add(Explosion(bomb, 50))  # 爆発エフェクト
+
+        for bomb in pg.sprite.spritecollide(bird, bossbombs, True):  # こうかとんと衝突した爆弾リスト
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            pg.display.update()
+            time.sleep(2)
+            return
+        
+        #bossがこうかとんと衝突したら
+        if boss.rect.colliderect(bird.rect):
+            bird.change_img(8, screen)  # こうかとん悲しみエフェクト
+            pg.display.update()
+            time.sleep(2)
+            return
+        
+        #bossとビームが衝突したら
+        if pg.sprite.spritecollide(boss, beams, True):
+            boss.hp -= 1
+            if boss.hp <= 0:
+                print("GAME CLEAR")
+                return
+        
+        
+        bossbombs.update()
+        bossbombs.draw(screen)
         bird.update(key_lst, screen)
         beams.update()
         beams.draw(screen)
         exps.update()
         exps.draw(screen)
         pg.display.update()
-        tmr += 1
-        clock.tick(50)
+        tmr += 1 # フレーム数をカウント
+        clock.tick(50) # 1秒間に50回の描画
 
 
 if __name__ == "__main__":
