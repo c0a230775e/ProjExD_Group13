@@ -560,7 +560,7 @@ def main():
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
 
-        bird = Bird(3, (550, 300))
+        bird = Bird(3, (550, 300)) 
         beams = pg.sprite.Group()
         bombs = pg.sprite.Group()
         emys = pg.sprite.Group()
@@ -627,6 +627,11 @@ def main():
             screen.blit(bg_img, [0, 0])
             #if 敵に当たる、攻撃が当たったら:
             #l_scr.valu-=1  残りライフを1減らす
+            
+
+            if l_scr.valu <= 0:  # ライフが0なら
+                game_over(screen)  # ゲームオーバー
+                return
 
             
 
@@ -655,8 +660,8 @@ def main():
             # else:
             #     bird.flooting = False
 
-            if pg.sprite.spritecollideany(bird, deathks):
-                return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
+           # if pg.sprite.spritecollideany(bird, deathks):
+                #return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
             
             # ボスの生成
         
@@ -675,8 +680,10 @@ def main():
             if pg.sprite.spritecollide(boss, beams, True):
                 boss.hp -= 1
                 if boss.hp <= 0:
-                    print("GAME CLEAR")
+                    game_clear(screen)  # ゲームクリア
                     return
+                    #print("GAME CLEAR")
+                    #return
     
             bossbombs.update()
             bossbombs.draw(screen)
