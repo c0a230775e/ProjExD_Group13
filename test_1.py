@@ -62,6 +62,7 @@ class Bird(pg.sprite.Sprite):
         img = pg.transform.flip(img0, True, False)  # 横以外の向きこうかとん
         img_2 = pg.transform.rotozoom(pg.image.load(f"fig/2.png"), 0, 0.8)
         img0_2 = pg.transform.flip(img_2, True, False)  # 横向きのこうかとん
+        img_3 = pg.transform.rotozoom(pg.image.load(f"fig/1.png"), 0, 0.9)
         self.imgs = {
             (+1, 0): img_2,  # 右
             (+1, -1): pg.transform.rotozoom(img, 45, 0.9),  # 右上
@@ -69,14 +70,21 @@ class Bird(pg.sprite.Sprite):
             (-1, -1): pg.transform.rotozoom(img0, -45, 0.9),  # 左上
             (-1, 0): img0_2,  # 左
             (-1, +1): img0,  # 左下
-            (0, +1): pg.transform.rotozoom(img, -90, 0.9),  # 下
+            (0, +1): img_3,  # 下
             (+1, +1): img,  # 右下
         }
         self.dire = (+1, 0)
         self.image = self.imgs[self.dire]
         self.rect = self.image.get_rect()
         self.rect.center = xy
-        self.speed = 10
+        self.speed = 5
+        self.life = 3  # ライフを設定
+        self.jump_power = -22  # ジャンプの初速度
+        self.gravity = 1.0  # 重力加速度
+        self.velocity_y = 0  # 縦方向の速度
+        self.state = "normal"  # 通常状態: "normal", 被弾状態: "hyper"
+        self.flooting = False  # フローティング状態
+        self.hyper_life = 0  # 無敵状態の残りフレーム数
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -98,12 +106,36 @@ class Bird(pg.sprite.Sprite):
             if key_lst[k]:
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
-        self.rect.move_ip(self.speed*sum_mv[0], self.speed*sum_mv[1])
+        # 水平移動
+        self.rect.move_ip(self.speed * sum_mv[0], 0)
         if check_bound(self.rect) != (True, True):
-            self.rect.move_ip(-self.speed*sum_mv[0], -self.speed*sum_mv[1])
+            self.rect.move_ip(-self.speed * sum_mv[0], 0)
+
+        # ジャンプ処理
+        if key_lst[pg.K_SPACE] and self.flooting:
+            self.velocity_y = self.jump_power
+            self.flooting = False
+
+        # 重力処理
+        self.velocity_y += self.gravity
+        self.rect.move_ip(0, self.velocity_y)
+
+        # 地面で停止
+        if self.flooting:
+            #self.rect.bottom = HEIGHT
+            self.velocity_y = 0
+
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
             self.image = self.imgs[self.dire]
+        screen.blit(self.image, self.rect)
+
+        # 被弾状態処理
+        if self.state == "hyper":
+            self.image = pg.transform.laplacian(self.image)  # 画像を変換
+            self.hyper_life -= 1
+            if self.hyper_life < 0:
+                self.state = "normal"
         screen.blit(self.image, self.rect)
 
 
@@ -304,81 +336,7 @@ class Life:
         self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
         self.img = self.fonto.render(f"ライフ {self.valu}", 0, (0, 255, 100))
         self.rct = self.img.get_rect()
-        self.rct.center = [100, HEIGHT-50]
-
-
-    def update(self, screen:pg.Surface):
-       self.img = self.fonto.render(f"ライフ {self.valu}", 0, (100, 255, 255))
-       screen.blit(self.img, self.rct)
-
-
-def game_start(screen: pg.Surface):
-    """
-    ゲームスタート時に、操作方法表示、ゲーム開始操作設定
-    """
-    
-    fonto = pg.font.SysFont("hg正楷書体pro", 50)
-    txt1 = fonto.render("Game Start : escキー", True, (255, 255, 255))
-    txt2 = fonto.render("操作方法1：WASDで操作", True, (255, 255, 255))
-    txt3 = fonto.render("操作方法2：スペースでジャンプ", True, (255, 255, 255))
-    txt4 = fonto.render("操作方法3：エンターと左クリックで攻撃", True, (255, 255, 255))
-    game_start = pg.Surface((WIDTH, HEIGHT))
-    pg.draw.rect(game_start, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
-    game_start.set_alpha(128)
-    screen.blit(game_start, (0, 0))  # 半透明画面描画
-    screen.blit(txt1, [WIDTH/2-450, HEIGHT/2-100])  # Game Start描画
-    screen.blit(txt2, [WIDTH/2-450, HEIGHT/2-50])
-    screen.blit(txt3, [WIDTH/2-450, HEIGHT/2])
-    screen.blit(txt4, [WIDTH/2-450, HEIGHT/2+50])
-    pg.display.update()
-
-def game_clear(screen: pg.Surface):
-    """
-    ゲームクリア時に、「Game Clear」と表示
-    """
-    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
-    fonto = pg.font.Font(None, 100)
-    txt = fonto.render("Game Clear", True, (255, 255, 255))
-    game_clear = pg.Surface((WIDTH, HEIGHT))
-    pg.draw.rect(game_clear, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
-    game_clear.set_alpha(128)
-    screen.blit(game_clear, (0, 0))  # 半透明画面描画
-    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
-    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
-    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
-    print("kansujikkou")
-    pg.display.update()
-    time.sleep(5)
-
-def game_over(screen: pg.Surface) -> None:
-    """
-    ゲームオーバー時に、半透明の黒い画面上で「Game Over」と表示し、
-    泣いているこうかとん画像を張り付ける
-    """
-    bg_img_n8 = pg.image.load("fig/8.png")  # こうかとん画像ロード
-    fonto = pg.font.Font(None, 100)
-    txt = fonto.render("Game Over", True, (255, 255, 255))
-    game_over = pg.Surface((WIDTH, HEIGHT))
-    pg.draw.rect(game_over, (0, 0, 0), [0, 0, WIDTH, HEIGHT])
-    game_over.set_alpha(128)
-    screen.blit(game_over, (0, 0))  # 半透明画面描画
-    screen.blit(txt, [WIDTH/2-200, HEIGHT/2])  # Game Over描画
-    screen.blit(bg_img_n8, [WIDTH/2-270, HEIGHT/2])  # 泣いてるこうかとん描画
-    screen.blit(bg_img_n8, [WIDTH/2+200, HEIGHT/2])
-    print("kansujikkou")
-    pg.display.update()
-    time.sleep(5)
-
-class Life:
-    """
-    残りライフに関するクラス
-    """
-    def __init__(self, color: tuple[int, int, int]):
-        self.valu = 10
-        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30)
-        self.img = self.fonto.render(f"ライフ {self.valu}", 0, (0, 255, 100))
-        self.rct = self.img.get_rect()
-        self.rct.center = [100, HEIGHT-50]
+        self.rct.center = 60, 20
 
 
     def update(self, screen:pg.Surface):
@@ -673,18 +631,29 @@ def main():
             
 
             bird.update(key_lst, screen)
+            #if bird.velocity_y >= -0.5:
             if floor.check_collision(bird.rect):
                 bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
-            if step1.check_collision(bird.rect):
+                bird.flooting = True
+            elif step1.check_collision(bird.rect):
                 bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-            if step2.check_collision(bird.rect):
+                bird.flooting = True
+            elif step2.check_collision(bird.rect):
                 bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
-            if step3.check_collision(bird.rect):
+                bird.flooting = True
+            elif step3.check_collision(bird.rect):
                 bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-            if step4.check_collision(bird.rect):
+                bird.flooting = True
+            elif step4.check_collision(bird.rect):
                 bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-            if step5.check_collision(bird.rect):
+                bird.flooting = True
+            elif step5.check_collision(bird.rect):
                 bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                bird.flooting = True
+            else:
+                bird.flooting = False
+            # else:
+            #     bird.flooting = False
 
             if pg.sprite.spritecollideany(bird, deathks):
                 return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
