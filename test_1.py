@@ -76,7 +76,7 @@ class Bird(pg.sprite.Sprite):
         self.image = self.imgs[self.dire]
         self.rect = self.image.get_rect()
         self.rect.center = xy
-        self.speed = 10
+        self.speed = 5
 
     def change_img(self, num: int, screen: pg.Surface):
         """
@@ -689,6 +689,11 @@ def main():
             if pg.sprite.spritecollideany(bird, deathks):
                 return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
             
+            collisions = pg.sprite.groupcollide( beams,deathks, True, True)  # 敵機とビームの衝突リスト
+            if collisions:
+                for deathk in collisions.values():
+                    for d in deathk:
+                        d.kill()
             # ボスの生成
         
             boss.update(tmr)

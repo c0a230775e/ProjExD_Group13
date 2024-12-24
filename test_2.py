@@ -76,7 +76,7 @@ class Bird(pg.sprite.Sprite):
         self.rect.center = xy
         self.speed = 10
         self.life = 3  # ライフを設定
-        self.jump_power = -30  # ジャンプの初速度
+        self.jump_power = -10  # ジャンプの初速度
         self.gravity = 1.0  # 重力加速度
         self.velocity_y = 0  # 縦方向の速度
         self.state = "normal"  # 通常状態: "normal", 被弾状態: "hyper"
