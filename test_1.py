@@ -686,7 +686,7 @@ def main():
     
             bossbombs.update()
             bossbombs.draw(screen)
-            l_scr.update(screen)  # 残りライフ
+            
             beams.update()
             beams.draw(screen)
             exps.update()
@@ -707,6 +707,7 @@ def main():
             bombs.draw(screen)
             flying_enemy.update()
             flying_enemy.draw(screen)
+            l_scr.update(screen)  # 残りライフ
             pg.display.update()
             tmr += 1
             clock.tick(50)
