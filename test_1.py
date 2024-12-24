@@ -79,7 +79,7 @@ class Bird(pg.sprite.Sprite):
         self.rect.center = xy
         self.speed = 5
         self.life = 3  # ライフを設定
-        self.jump_power = -22  # ジャンプの初速度
+        self.jump_power = -19  # ジャンプの初速度
         self.gravity = 1.0  # 重力加速度
         self.velocity_y = 0  # 縦方向の速度
         self.state = "normal"  # 通常状態: "normal", 被弾状態: "hyper"
@@ -631,27 +631,27 @@ def main():
             
 
             bird.update(key_lst, screen)
-            #if bird.velocity_y >= -0.5:
-            if floor.check_collision(bird.rect):
-                bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step1.check_collision(bird.rect):
-                bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step2.check_collision(bird.rect):
-                bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
-                bird.flooting = True
-            elif step3.check_collision(bird.rect):
-                bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step4.check_collision(bird.rect):
-                bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            elif step5.check_collision(bird.rect):
-                bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
-                bird.flooting = True
-            else:
-                bird.flooting = False
+            if bird.velocity_y >= 0:
+                if floor.check_collision(bird.rect):
+                    bird.rect.y = floor.rect.top - bird.rect.height  # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step1.check_collision(bird.rect):
+                    bird.rect.y = step1.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step2.check_collision(bird.rect):
+                    bird.rect.y = step2.rect.top - bird.rect.height    # 衝突時にこうかとんを床の上に移動 
+                    bird.flooting = True
+                elif step3.check_collision(bird.rect):
+                    bird.rect.y = step3.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step4.check_collision(bird.rect):
+                    bird.rect.y = step4.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                elif step5.check_collision(bird.rect):
+                    bird.rect.y = step5.rect.top - bird.rect.height # 衝突時にこうかとんを床の上に移動
+                    bird.flooting = True
+                else:
+                    bird.flooting = False
             # else:
             #     bird.flooting = False
 
@@ -686,7 +686,7 @@ def main():
     
             bossbombs.update()
             bossbombs.draw(screen)
-            
+            l_scr.update(screen)  # 残りライフ
             beams.update()
             beams.draw(screen)
             exps.update()
@@ -707,7 +707,6 @@ def main():
             bombs.draw(screen)
             flying_enemy.update()
             flying_enemy.draw(screen)
-            l_scr.update(screen)  # 残りライフ
             pg.display.update()
             tmr += 1
             clock.tick(50)
