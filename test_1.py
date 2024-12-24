@@ -432,7 +432,7 @@ def main():
         pg.display.set_caption("真！こうかとん無双")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
-
+ 
         bird = Bird(3, (550, 300))
         beams = pg.sprite.Group()
         exps = pg.sprite.Group()
