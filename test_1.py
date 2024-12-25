@@ -450,10 +450,10 @@ class Boss(pg.sprite.Sprite):
         super().__init__()
         self.image = pg.transform.rotozoom(__class__.boss_img, 0, 0.6)
         self.rect = self.image.get_rect() # ボスのRect
-        self.rect.center = (WIDTH // 2, -100)  # 初期位置は画面上部外
+        self.rect.center = (WIDTH // 2, -500)  # 初期位置は画面上部外
         self.vx, self.vy = 5, 5  # ボスの移動速度
         self.state = "down"  # 初期状態
-        self.hp = 20  # ボスの体力
+        self.hp = 50  # ボスの体力
         self.attack_timer = 0  # 攻撃状態用のタイマー
 
     def update(self, tmr):
@@ -536,6 +536,24 @@ class BossBomb(pg.sprite.Sprite):
         self.rect.move_ip(self.speed*self.vx, self.speed*self.vy)
         if check_bound(self.rect) != (True, True):
             self.kill()
+            
+class Score:
+    """
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    爆弾：1点
+    敵機：10点
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
+        self.value = 0
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, HEIGHT-50
+
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 def main():
     pg.display.set_caption("こうかとんの村")
@@ -582,6 +600,8 @@ def main():
         boss = Boss() # ボス
         bossbombs = pg.sprite.Group()
 
+        score = Score()  # スコア
+
         tmr = 0
         clock = pg.time.Clock()
         while True:
@@ -603,11 +623,14 @@ def main():
                     game_over(screen)
                     return
                 
-            if tmr%350 == 0 and len(flying_enemy) < 3:  # 350フレームに1回,敵機を出現させ,上限を3体までにする
+            if (tmr%350 == 0) and (len(flying_enemy) < 3):  # 350フレームに1回,敵機を出現させ,上限を3体までにする
                 new_enemy = Flying_enemy()
                 flying_enemy.add(new_enemy)
                 emys.add(new_enemy)  # 敵機を emys にも追加
                 #flying_enemy.add(Flying_enemy())
+            elif score.value >= 50: # 50点以上になったらボスを出現させる
+                boss.update(tmr)
+
 
             for emy in emys:
                 if emy.timer >= emy.interval:  # 200フレームごとに爆弾を投下
@@ -616,15 +639,18 @@ def main():
 
             for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():  # ビームと衝突した敵機リスト
                 exps.add(Explosion(emy, 100))  # 爆発エフェクト
+                score.value += 10  # スコアを10点加算
                 bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-            for bombs in pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
-                bird.change_img(8, screen)  # こうかとん悲しみエフェクト
-                pg.display.update()
-                time.sleep(2)
-                return
+            if pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+                #こうかとんに弾が当たったらライフを1減らす
+                l_scr.valu-=1
+                if l_scr.valu == 0:
+                    game_over(screen)
+                    return
+                
 
-            screen.blit(bg_img, [0, 0])
+            screen.blit(bg_img, [0, 0]) # 背景画像描画
             #if 敵に当たる、攻撃が当たったら:
             #l_scr.valu-=1  残りライフを1減らす
 
@@ -658,25 +684,34 @@ def main():
             if pg.sprite.spritecollideany(bird, deathks):
                 return 0  # こうかとんがデスこうかとんに触れたらゲームを終了
             
-            # ボスの生成
-        
-            boss.update(tmr)
+            
+                
+            
             screen.blit(boss.image, boss.rect)
+            
 
             if boss.state == "attack" and tmr % 2 == 0:  # 攻撃状態で2フレームごとに爆弾を
                 bossbombs.add(BossBomb(boss, bird))
             for bomb in pg.sprite.groupcollide(bossbombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             #こうかとんが弾と衝突したら
-            # 消去済み   
+            if pg.sprite.spritecollide(bird, bossbombs, True) and score.value >= 50:
+                l_scr.valu-=1
+                if l_scr.valu == 0:
+                    game_over(screen)
+                    return
             #bossがこうかとんと衝突したら
-            #　消去済み
+            if boss.rect.colliderect(bird.rect) and score.value >= 50:
+                l_scr.valu-=1
+                if l_scr.valu == 0:
+                    game_over(screen)
+                    return
             
             #bossとビームが衝突したら
-            if pg.sprite.spritecollide(boss, beams, True):
+            if pg.sprite.spritecollide(boss, beams, True) and score.value >= 50:    
                 boss.hp -= 1
                 if boss.hp <= 0:
-                    print("GAME CLEAR")
+                    game_clear(screen)
                     return
     
             bossbombs.update()
@@ -703,6 +738,7 @@ def main():
             flying_enemy.update()
             flying_enemy.draw(screen)
             l_scr.update(screen)  # 残りライフ
+            score.update(screen)
             pg.display.update()
             tmr += 1
             clock.tick(50)
