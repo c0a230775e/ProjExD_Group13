@@ -684,6 +684,9 @@ def main():
             if pg.sprite.spritecollideany(bird, deathks):
                 l_scr.valu-=1
                   # こうかとんがデスこうかとんに触れたらゲームを終了
+                if l_scr.valu <= 0: #ライフが0以下なら
+                    game_over(screen)
+                    return
             
             collisions = pg.sprite.groupcollide( beams,deathks, True, True)  # 敵機とビームの衝突リスト
             if collisions:
@@ -693,7 +696,6 @@ def main():
             
             # ボスの生成
         
-            boss.update(tmr)
             screen.blit(boss.image, boss.rect)
             
 
@@ -704,13 +706,13 @@ def main():
             #こうかとんが弾と衝突したら
             if pg.sprite.spritecollide(bird, bossbombs, True) and score.value >= 50:
                 l_scr.valu-=1
-                if l_scr.valu == 0:
+                if l_scr.valu <= 0: #ライフが0以下なら
                     game_over(screen)
                     return
             #bossがこうかとんと衝突したら
             if boss.rect.colliderect(bird.rect) and score.value >= 50:
                 l_scr.valu-=1
-                if l_scr.valu == 0:
+                if l_scr.valu <= 0:
                     game_over(screen)
                     return
             
