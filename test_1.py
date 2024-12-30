@@ -127,8 +127,8 @@ class Bird(pg.sprite.Sprite):
 
         if not (sum_mv[0] == 0 and sum_mv[1] == 0):
             self.dire = tuple(sum_mv)
-            self.image = self.imgs[self.dire]
-        screen.blit(self.image, self.rect)
+            if self.state == "normal":
+                self.image = self.imgs[self.dire]
 
         # 被弾状態処理
         if self.state == "hyper":
@@ -611,17 +611,7 @@ def main():
                     return 0
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     beams.add(Beam(bird))
-                if event.type == pg.KEYDOWN and event.key == pg.K_1:  # 1が押されたらライフを減らす
-                    l_scr.valu-=1
-                    if l_scr.valu == 0:  # ライフが0なら
-                        game_over(screen)  # ゲームオーバー
-                        return
-                if event.type == pg.KEYDOWN and event.key == pg.K_2:  # 2が押されたらゲームクリア
-                    game_clear(screen)
-                    return
-                if event.type == pg.KEYDOWN and event.key == pg.K_3:  # 3が押されたらゲームオーバー
-                    game_over(screen)
-                    return
+                
                 
             if (tmr%350 == 0) and (len(flying_enemy) < 3):  # 350フレームに1回,敵機を出現させ,上限を3体までにする
                 new_enemy = Flying_enemy()
@@ -642,9 +632,11 @@ def main():
                 score.value += 10  # スコアを10点加算
                 bird.change_img(6, screen)  # こうかとん喜びエフェクト
 
-            if pg.sprite.spritecollide(bird, bombs, True):  # こうかとんと衝突した爆弾リスト
+            if pg.sprite.spritecollide(bird, bombs, True) and bird.state == "normal":  # こうかとんと衝突した爆弾リスト
                 #こうかとんに弾が当たったらライフを1減らす
                 l_scr.valu-=1
+                bird.state = "hyper"
+                bird.hyper_life = 100
                 if l_scr.valu == 0:
                     game_over(screen)
                     return
@@ -681,8 +673,10 @@ def main():
             # else:
             #     bird.flooting = False
 
-            if pg.sprite.spritecollideany(bird, deathks):
+            if pg.sprite.spritecollideany(bird, deathks) and bird.state == "normal":
                 l_scr.valu-=1
+                bird.state = "hyper"
+                bird.hyper_life = 100
                   # こうかとんがデスこうかとんに触れたらゲームを終了
                 if l_scr.valu <= 0: #ライフが0以下なら
                     game_over(screen)
@@ -704,14 +698,18 @@ def main():
             for bomb in pg.sprite.groupcollide(bossbombs, beams, True, True).keys():  # ビームと衝突した爆弾リスト
                 exps.add(Explosion(bomb, 50))  # 爆発エフェクト
             #こうかとんが弾と衝突したら
-            if pg.sprite.spritecollide(bird, bossbombs, True) and score.value >= 50:
+            if pg.sprite.spritecollide(bird, bossbombs, True) and score.value >= 50 and bird.state == "normal":
                 l_scr.valu-=1
+                bird.state = "hyper"
+                bird.hyper_life = 100
                 if l_scr.valu <= 0: #ライフが0以下なら
                     game_over(screen)
                     return
             #bossがこうかとんと衝突したら
-            if boss.rect.colliderect(bird.rect) and score.value >= 50:
+            if boss.rect.colliderect(bird.rect) and score.value >= 50 and bird.state == "normal":
                 l_scr.valu-=1
+                bird.state = "hyper"
+                bird.hyper_life = 100
                 if l_scr.valu <= 0:
                     game_over(screen)
                     return
