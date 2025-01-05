@@ -745,7 +745,6 @@ def main():
             flying_enemy.update()
             flying_enemy.draw(screen)
             l_scr.update(screen)  # 残りライフ
-            score.update(screen)
             pg.display.update()
             tmr += 1
             clock.tick(50)
