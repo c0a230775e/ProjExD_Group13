@@ -559,8 +559,8 @@ def main():
         pg.display.set_caption("こうかとんの村")
         screen = pg.display.set_mode((WIDTH, HEIGHT))
         bg_img = pg.image.load(f"fig/Game-battle-background-1024x576.png")
- 
-        bird = Bird(3, (550, 300))
+
+        bird = Bird(3, (550, 300)) 
         beams = pg.sprite.Group()
         bombs = pg.sprite.Group()
         emys = pg.sprite.Group()
@@ -591,17 +591,7 @@ def main():
                     return 0
                 if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
                     beams.add(Beam(bird))
-                if event.type == pg.KEYDOWN and event.key == pg.K_1:  # 1が押されたらライフを減らす
-                    l_scr.valu-=1
-                    if l_scr.valu == 0:  # ライフが0なら
-                        game_over(screen)  # ゲームオーバー
-                        return
-                if event.type == pg.KEYDOWN and event.key == pg.K_2:  # 2が押されたらゲームクリア
-                    game_clear(screen)
-                    return
-                if event.type == pg.KEYDOWN and event.key == pg.K_3:  # 3が押されたらゲームオーバー
-                    game_over(screen)
-                    return
+                
                 
             if tmr%350 == 0 and len(flying_enemy) < 3:  # 350フレームに1回,敵機を出現させ,上限を3体までにする
                 new_enemy = Flying_enemy()
@@ -625,10 +615,10 @@ def main():
                 return
 
             screen.blit(bg_img, [0, 0])
-            #if 敵に当たる、攻撃が当たったら:
-            #l_scr.valu-=1  残りライフを1減らす
-
             
+            if l_scr.valu <= 0:  # ライフが0なら
+                game_over(screen)  # ゲームオーバー
+                return
 
             bird.update(key_lst, screen)
             if bird.velocity_y >= 0:
@@ -680,8 +670,10 @@ def main():
             if pg.sprite.spritecollide(boss, beams, True):
                 boss.hp -= 1
                 if boss.hp <= 0:
-                    print("GAME CLEAR")
+                    game_clear(screen)  # ゲームクリア
                     return
+                    #print("GAME CLEAR")
+                    #return
     
             bossbombs.update()
             bossbombs.draw(screen)
